@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title>県庁所在地クイズ</title>
+        <script type="text/javascript" src="map/dist/jpmap.min.js"></script>
+        <style>
+          .parent {
+            position: relative;
+          }
+          .e {
+            position: absolute;
+            top: 200px;
+            left: 300px;
+          }
+          @keyframes wide-scale {
+            0% {
+              opacity:1.0;
+            }
+            100% {
+                opacity:0.0;
+            }
+        }
+         
+        .ef {
+            animation-name: wide-scale;
+            animation-duration: 1s;
+        }
+        body{
+          background-color: aqua;
+        }
+        </style>
+    </head>
+    <body>
+      <table>
+        <tr>
+          <th>
+            <td>
+              <div id="my-map"></div>
+              <div class="e" id="e"></div>
+            </td>
+            <td>
+              <h1>県庁所在地ゲーム</h1>
+              <div id="mon"></div>
+              <br>
+              <div id="sz"></div>
+              <div id="ten"></div>
+              <div class="parent">
+              <div class="rs" id="rs"></div>
+            </td>
+          </th>
+        </tr>
+      </table>
+        </div>
+        
+        <button id="startButton" onclick="start()">スタート</button>
+      </div>
+        <script>
+            var res = [];
+            var re;
+            var mon;
+            var mb;
+            var max = 47;
+            var game = 0;
+            var m = document.getElementById("mon");
+            var sei;
+            var s;
+            var e = document.getElementById("e");
+            var rs;
+            var rm;
+            var t = document.getElementById("ten");
+            var r = document.getElementById("rs");
+            var kat = 0;
+            let uttearnce = new SpeechSynthesisUtterance();
+            var sz = document.getElementById("sz");
+
+            const request = new XMLHttpRequest();
+            request.addEventListener('load', (event) => {
+            const response = event.target.responseText.split('\r');
+                for(var i=0;i<response.length;i++){
+                    re = response[i].split(",");
+                    res.push({"ken":re[0],"syo":re[1]});
+                }
+            });
+            request.open('GET', "./csv/kenchou-shozaichi.csv");
+            request.send();
+            console.log(res);
+            var d = new jpmap.japanMap(document.getElementById("my-map"), {
+                showsPrefectureName: true,
+                selection : "prefecture",
+                movesIslands: true,
+                lang: 'ja',
+                width: 1000,
+                hoverColor : "#777",
+                onSelect: function(data){
+                    if (game == 1){
+                        //ゲーム中
+                        if (kat == 0){
+                            kat = 1;
+                            if (data.name == sei){
+                                //正解
+                                var music = new Audio('oto/seikai.mp3');
+                                e.innerHTML = '<img src="img/seikai.png" class="ef">';
+                                setTimeout(function(){
+                                    rs++;
+                                    rm = 0;
+                                    music.play();
+                                    e.innerHTML = "";
+                                    mon.innerHTML = "";
+                                    s += 10*rs;
+                                    t.innerHTML = s+"点";
+                                    r.innerHTML = rs+"連続正解";
+                                    syutudai();
+                                    kat = 0;
+                                },1000);
+                            }
+                            else{
+                                //間違い
+                                var music = new Audio('oto/matigai.mp3');
+                                e.innerHTML = '<img src="img/zannen.png" class="ef">';
+                                setTimeout(function(){
+                                    rs = 0;
+                                    rm++;
+
+                                    music.play();
+                                    e.innerHTML = "";
+                                    mon.innerHTML = "";
+                                    s -= 10*rm;
+
+                                    s += 10*rs;
+                                    if (s < 0){
+                                        s = 0;
+                                    }
+                                    t.innerHTML = s+"点";
+                                    r.innerHTML = rs+"連続不正解";
+                                    syutudai();
+                                    kat = 0;
+                                },1000)
+                        }
+                    }
+                }
+                }
+            });
+            function start(){
+                document.getElementById("startButton").style.display = "none";
+                game = 1;
+                s = 0;
+                rs = 0;
+                rm = 0;
+                t.innerHTML = s+"点";
+                r.innerHTML = rs+"連続正解";
+                syutudai();
+                kd();
+            }
+            function syutudai(){
+                if (game == 1){
+                kat = 0;
+                mb = Math.round( Math.random() * max );
+                mon = "県庁所在地が、"+res[mb]["syo"]+"の都道府県はどこ?";
+                sei = res[mb]["ken"];
+                m.innerHTML = mon;
+                sp(mon);
+                }
+            }
+            function sp(nai){
+                uttearnce.volume = 1;
+   	            uttearnce.rate = 1;
+   	            uttearnce.pitch = 0;
+                uttearnce.lang = 'ja-JP';
+                uttearnce.text = nai;
+                speechSynthesis.speak(uttearnce);
+            }
+            function zh(){
+                sz.innerHTML = "のこり"+parseInt(nb/60)+"分"+nb%60+"秒";
+            }
+            function bs(){
+                setTimeout(function(){
+                    nb--;
+                    if (nb == 0){
+                        if (game == 1){
+                        game = 0;
+                        uttearnce.text = "終了";
+                             
+                        speechSynthesis.speak(uttearnce);
+                        game = 0;
+                        alert("終了");
+                        }
+                    }
+                    else{
+                        if (game == 1){
+                            zh();
+                            bs();
+                        }
+                    }
+                
+                },1000);
+            }
+            function kd(){
+                nb = 60;
+                zh();
+                bs();
+            }
+        </script>
+    </body>
+</html>
